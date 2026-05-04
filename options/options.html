@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ChatGPT Sidebar — Options</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>ChatGPT Sidebar Options</h1>
+
+    <section class="section">
+      <h2>Built-in Toolbar Actions</h2>
+      <p class="hint">Customize the built-in prompts. You can use <code>{{selected_text}}</code>, <code>{{page_url}}</code>, <code>{{page_title}}</code>, and for Translate also <code>{{target_language}}</code>.</p>
+      <form id="built-in-actions-form" class="stack-form">
+        <div class="action-card">
+          <div class="action-card-header">
+            <h3>Explain</h3>
+          </div>
+          <label for="explain-template">Prompt template</label>
+          <textarea id="explain-template" rows="5" required></textarea>
+        </div>
+
+        <div class="action-card">
+          <div class="action-card-header">
+            <h3>Translate</h3>
+          </div>
+          <label for="translate-language">Target language</label>
+          <input type="text" id="translate-language" placeholder="e.g. English" required>
+          <label for="translate-template">Prompt template</label>
+          <textarea id="translate-template" rows="5" required></textarea>
+        </div>
+
+        <div class="action-card">
+          <div class="action-card-header">
+            <h3>Summarize</h3>
+          </div>
+          <label for="summarize-template">Prompt template</label>
+          <textarea id="summarize-template" rows="5" required></textarea>
+        </div>
+
+        <div class="button-row">
+          <button type="submit">Save Built-in Actions</button>
+          <button type="button" id="reset-built-ins-btn" class="secondary-btn">Reset Defaults</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="section">
+      <h2>Custom Prompts</h2>
+      <p class="hint">Use <code>{{selected_text}}</code>, <code>{{page_url}}</code>, <code>{{page_title}}</code> as variables.</p>
+      <div id="prompts-list"></div>
+      <form id="add-prompt-form" class="inline-form">
+        <input type="text" id="prompt-name" placeholder="Prompt name" required>
+        <input type="text" id="prompt-template" placeholder="Prompt template" required>
+        <button type="submit">Add Prompt</button>
+      </form>
+    </section>
+
+    <section class="section">
+      <h2>Blocked Sites</h2>
+      <p class="hint">Extension will not show selection toolbar on these sites.</p>
+      <div id="blocked-sites-list"></div>
+      <form id="add-site-form" class="inline-form">
+        <input type="text" id="site-input" placeholder="e.g. github.com" required>
+        <button type="submit">Block Site</button>
+      </form>
+    </section>
+  </div>
+  <script src="../lib/action-settings.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+.selection-toolbar {
+  position: fixed;
+  display: flex;
+  gap: 4px;
+  padding: 5px 6px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  align-items: center;
+}
+
+.selection-toolbar.hidden {
+  display: none;
+}
+
+.selection-toolbar button {
+  min-height: 36px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.selection-toolbar button:hover {
+  transform: translateY(-1px);
+}
+
+.selection-toolbar button .toolbar-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.selection-toolbar button svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.selection-toolbar button .toolbar-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.selection-toolbar button .toolbar-logo {
+  width: 18px;
+  height: 18px;
+  display: block;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.selection-toolbar button.open-sidebar-btn {
+  background: #111827;
+  color: white;
+}
+
+.selection-toolbar button.open-sidebar-btn:hover {
+  background: #030712;
+}
+
+.selection-toolbar button.copy-btn {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.selection-toolbar button.copy-btn:hover {
+  background: #e0e0e0;
+}
+
+.selection-toolbar button.explain-btn {
+  background: #10a37f;
+  color: white;
+}
+
+.selection-toolbar button.explain-btn:hover {
+  background: #0d8a6a;
+}
+
+.selection-toolbar button.translate-btn {
+  background: #4f46e5;
+  color: white;
+}
+
+.selection-toolbar button.translate-btn:hover {
+  background: #4338ca;
+}
+
+.selection-toolbar button.summarize-btn {
+  background: #f59e0b;
+  color: white;
+}
+
+.selection-toolbar button.summarize-btn:hover {
+  background: #d97706;
+}
