@@ -1,5 +1,5 @@
 (function () {
-  const BRIDGE_PORT_NAME = "chatgpt-bridge";
+  const BRIDGE_MESSAGE_SOURCE = "chatgpt-sidebar-bridge";
 
   function findComposer(doc = document) {
     return (
@@ -173,30 +173,49 @@
     tryInject();
   }
 
-  function setupBridgePort() {
-    if (
-      typeof chrome === "undefined" ||
-      !chrome.runtime ||
-      typeof chrome.runtime.connect !== "function"
-    ) {
-      return;
-    }
+  function setupMessageBridge() {
+    window.addEventListener("message", (event) => {
+      if (event.source !== window.parent) {
+        return;
+      }
 
-    const port = chrome.runtime.connect({ name: BRIDGE_PORT_NAME });
+      const message = event.data;
+      if (!message || message.source !== BRIDGE_MESSAGE_SOURCE) {
+        return;
+      }
 
-    port.onMessage.addListener((message) => {
-      if (!message || message.type !== "inject-prompt") {
+      if (message.type === "bridge-ping") {
+        window.parent.postMessage(
+          {
+            source: BRIDGE_MESSAGE_SOURCE,
+            type: "bridge-ready",
+          },
+          "*"
+        );
+        return;
+      }
+
+      if (message.type !== "inject-prompt") {
         return;
       }
 
       injectPromptWithRetry(message.promptText, (result) => {
-        port.postMessage({
+        window.parent.postMessage({
+          source: BRIDGE_MESSAGE_SOURCE,
           type: "inject-result",
           requestId: message.requestId,
           result,
-        });
+        }, "*");
       });
     });
+
+    window.parent.postMessage(
+      {
+        source: BRIDGE_MESSAGE_SOURCE,
+        type: "bridge-ready",
+      },
+      "*"
+    );
   }
 
   function isEmbeddedSidebarFrame(win = window) {
@@ -212,7 +231,7 @@
     typeof document !== "undefined" &&
     isEmbeddedSidebarFrame()
   ) {
-    setupBridgePort();
+    setupMessageBridge();
   }
 
   if (typeof module !== "undefined" && module.exports) {

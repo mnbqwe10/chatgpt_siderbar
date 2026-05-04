@@ -2,63 +2,78 @@ const iframe = document.getElementById("chatgpt-iframe");
 const statusBar = document.getElementById("status-bar");
 const screenshotBtn = document.getElementById("screenshot-btn");
 
-const BRIDGE_PORT_NAME = "chatgpt-bridge";
+const BRIDGE_MESSAGE_SOURCE = "chatgpt-sidebar-bridge";
 
 let isIframeReady = false;
-let bridgePort = null;
+let isBridgeReady = false;
 let nextRequestId = 0;
 const pendingBridgeRequests = new Map();
-
-if (iframe && iframe.dataset.src) {
-  iframe.src = iframe.dataset.src;
-}
 
 function setStatus(msg, type = "") {
   statusBar.textContent = msg;
   statusBar.className = type ? type : "";
 }
 
+function getChatGptOrigin() {
+  return new URL(iframe.dataset.src || iframe.src).origin;
+}
+
+function pingBridge() {
+  if (!iframe || !iframe.contentWindow) {
+    return;
+  }
+
+  try {
+    iframe.contentWindow.postMessage(
+      {
+        source: BRIDGE_MESSAGE_SOURCE,
+        type: "bridge-ping",
+      },
+      getChatGptOrigin()
+    );
+  } catch (error) {
+    // Ignore ping failures; waitForBridge will surface a real timeout if needed.
+  }
+}
+
 iframe.addEventListener("load", () => {
   isIframeReady = true;
+  isBridgeReady = false;
   setStatus("ChatGPT loaded, waiting for bridge...", "success");
+  pingBridge();
 });
 
 iframe.addEventListener("error", () => {
   setStatus("Failed to load ChatGPT", "error");
 });
 
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== BRIDGE_PORT_NAME) {
+window.addEventListener("message", (event) => {
+  if (!iframe || event.source !== iframe.contentWindow) {
     return;
   }
 
-  bridgePort = port;
-  setStatus("ChatGPT bridge ready", "success");
+  const message = event.data;
+  if (!message || message.source !== BRIDGE_MESSAGE_SOURCE) {
+    return;
+  }
 
-  port.onMessage.addListener((message) => {
-    if (!message || message.type !== "inject-result") {
-      return;
-    }
+  if (message.type === "bridge-ready") {
+    isBridgeReady = true;
+    setStatus("ChatGPT bridge ready", "success");
+    return;
+  }
 
-    const pending = pendingBridgeRequests.get(message.requestId);
-    if (!pending) {
-      return;
-    }
+  if (message.type !== "inject-result") {
+    return;
+  }
 
-    pendingBridgeRequests.delete(message.requestId);
-    pending.resolve(message.result);
-  });
+  const pending = pendingBridgeRequests.get(message.requestId);
+  if (!pending) {
+    return;
+  }
 
-  port.onDisconnect.addListener(() => {
-    if (bridgePort === port) {
-      bridgePort = null;
-    }
-
-    for (const pending of pendingBridgeRequests.values()) {
-      pending.reject(new Error("ChatGPT bridge disconnected"));
-    }
-    pendingBridgeRequests.clear();
-  });
+  pendingBridgeRequests.delete(message.requestId);
+  pending.resolve(message.result);
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -70,16 +85,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function waitForBridge(timeoutMs = 5000) {
-  if (bridgePort) {
-    return Promise.resolve(bridgePort);
+  if (isBridgeReady && iframe && iframe.contentWindow) {
+    return Promise.resolve(iframe.contentWindow);
   }
 
   return new Promise((resolve, reject) => {
     const start = Date.now();
+    pingBridge();
 
     function poll() {
-      if (bridgePort) {
-        resolve(bridgePort);
+      if (isBridgeReady && iframe && iframe.contentWindow) {
+        resolve(iframe.contentWindow);
         return;
       }
 
@@ -88,6 +104,7 @@ function waitForBridge(timeoutMs = 5000) {
         return;
       }
 
+      pingBridge();
       window.setTimeout(poll, 100);
     }
 
@@ -96,18 +113,23 @@ function waitForBridge(timeoutMs = 5000) {
 }
 
 function sendBridgeRequest(promptText) {
-  return waitForBridge().then((port) => {
+  return waitForBridge().then((targetWindow) => {
     const requestId = `req-${Date.now()}-${nextRequestId++}`;
+    const targetOrigin = getChatGptOrigin();
 
     return new Promise((resolve, reject) => {
       pendingBridgeRequests.set(requestId, { resolve, reject });
 
       try {
-        port.postMessage({
-          type: "inject-prompt",
-          requestId,
-          promptText,
-        });
+        targetWindow.postMessage(
+          {
+            source: BRIDGE_MESSAGE_SOURCE,
+            type: "inject-prompt",
+            requestId,
+            promptText,
+          },
+          targetOrigin
+        );
       } catch (error) {
         pendingBridgeRequests.delete(requestId);
         reject(error);
@@ -173,3 +195,7 @@ screenshotBtn.addEventListener("click", async () => {
     setStatus("Screenshot failed: " + e.message, "error");
   }
 });
+
+if (iframe && iframe.dataset.src) {
+  iframe.src = iframe.dataset.src;
+}

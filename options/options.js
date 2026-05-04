@@ -11,6 +11,50 @@ const resetBuiltInsBtn = document.getElementById("reset-built-ins-btn");
 const blockedSitesList = document.getElementById("blocked-sites-list");
 const addSiteForm = document.getElementById("add-site-form");
 const siteInput = document.getElementById("site-input");
+const TRANSLATE_LANGUAGES = [
+  "Arabic",
+  "Bengali",
+  "Bulgarian",
+  "Chinese (Simplified)",
+  "Chinese (Traditional)",
+  "Croatian",
+  "Czech",
+  "Danish",
+  "Dutch",
+  "English",
+  "Estonian",
+  "Finnish",
+  "French",
+  "German",
+  "Greek",
+  "Hebrew",
+  "Hindi",
+  "Hungarian",
+  "Indonesian",
+  "Italian",
+  "Japanese",
+  "Korean",
+  "Latvian",
+  "Lithuanian",
+  "Malay",
+  "Norwegian",
+  "Persian",
+  "Polish",
+  "Portuguese",
+  "Romanian",
+  "Russian",
+  "Serbian",
+  "Slovak",
+  "Slovenian",
+  "Spanish",
+  "Swedish",
+  "Tamil",
+  "Thai",
+  "Turkish",
+  "Ukrainian",
+  "Urdu",
+  "Vietnamese",
+];
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -49,9 +93,28 @@ function renderPrompts(prompts) {
   promptsList.appendChild(ul);
 }
 
+function populateTranslateLanguageOptions(selectedLanguage) {
+  const languages = [...TRANSLATE_LANGUAGES];
+  if (selectedLanguage && !languages.includes(selectedLanguage)) {
+    languages.push(selectedLanguage);
+  }
+
+  languages.sort((a, b) => a.localeCompare(b));
+  translateLanguageInput.innerHTML = "";
+
+  languages.forEach((language) => {
+    const option = document.createElement("option");
+    option.value = language;
+    option.textContent = language;
+    translateLanguageInput.appendChild(option);
+  });
+
+  translateLanguageInput.value = selectedLanguage || "English";
+}
+
 function renderBuiltInActions(actionSettings) {
   explainTemplateInput.value = actionSettings.explain.template;
-  translateLanguageInput.value = actionSettings.translate.targetLanguage;
+  populateTranslateLanguageOptions(actionSettings.translate.targetLanguage);
   translateTemplateInput.value = actionSettings.translate.template;
   summarizeTemplateInput.value = actionSettings.summarize.template;
 }

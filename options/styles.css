@@ -112,6 +112,7 @@ li:last-child {
 }
 
 input,
+select,
 textarea {
   flex: 1;
   padding: 8px 10px;

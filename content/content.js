@@ -183,6 +183,13 @@
       return;
     }
 
+    currentToolbar.querySelectorAll("button").forEach((button) => {
+      button.addEventListener("mousedown", (event) => {
+        // Preserve the current page selection while the toolbar button is pressed.
+        event.preventDefault();
+      });
+    });
+
     currentToolbar
       .querySelector(".open-sidebar-btn")
       .addEventListener("click", () => handleAction("open-sidebar"));
@@ -216,7 +223,11 @@
       return;
     }
 
-    document.addEventListener("mouseup", () => {
+    document.addEventListener("mouseup", (event) => {
+      if (currentToolbar && currentToolbar.contains(event.target)) {
+        return;
+      }
+
       const selectionInfo = getSelectionInfo();
       if (selectionInfo) {
         showToolbarForSelection(selectionInfo);
