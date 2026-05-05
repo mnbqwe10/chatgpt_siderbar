@@ -19,7 +19,7 @@ chrome.runtime.onInstalled.addListener(() => {
     ],
     removeRuleIds: [1]
   });
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
 });
 
 chrome.commands.onCommand.addListener((command) => {

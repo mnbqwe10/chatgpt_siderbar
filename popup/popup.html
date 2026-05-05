@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="popup-shell">
+    <header class="popup-header">
+      <label class="header-switch" for="extension-enabled" aria-label="Toggle selection toolbar">
+        <input type="checkbox" id="extension-enabled" class="switch-input">
+        <span class="switch-track" aria-hidden="true"></span>
+      </label>
+      <div class="brand">
+        <img src="../assets/logo.png" alt="" class="popup-logo">
+        <h1>Sidebar</h1>
+      </div>
+      <button type="button" id="open-sidebar-btn" class="primary-btn">Open Sidebar</button>
+    </header>
+
+    <section class="panel">
+      <label for="target-language">Translate To</label>
+      <select id="target-language"></select>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Toolbar</h2>
+        <select id="label-mode" aria-label="Button text display">
+          <option value="icon-text">Icon + text</option>
+          <option value="icon-only">Icon only</option>
+        </select>
+      </div>
+      <div id="toolbar-actions-list" class="toolbar-actions-list"></div>
+    </section>
+
+  </main>
+
+  <script src="../lib/translate-languages.js"></script>
+  <script src="../lib/action-settings.js"></script>
+  <script src="../lib/toolbar-settings.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

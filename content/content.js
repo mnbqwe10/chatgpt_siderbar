@@ -2,36 +2,31 @@
   let currentToolbar = null;
   let lastSelection = null;
   let lastSelectionRect = null;
-  const openSidebarLogoUrl = chrome.runtime.getURL("assets/logo.png");
+  let selectionToolbarEnabled = true;
+  let currentSiteBlocked = false;
+  let toolbarSettings = getDefaultToolbarSettings();
+  const openSidebarIconUrl = chrome.runtime.getURL(
+    "assets/hide-sidebar-horiz.svg"
+  );
 
   const TOOLBAR_ICONS = {
-    openSidebar: `
-      <span class="toolbar-icon">
-        <img src="${openSidebarLogoUrl}" alt="" class="toolbar-logo" />
-      </span>
-      <span class="toolbar-label">Open</span>
-    `,
-    copy: `
-      <span class="toolbar-icon">
+    openSidebar: `<span class="toolbar-icon">
+        <img src="${openSidebarIconUrl}" alt="" class="toolbar-logo" />
+      </span>`,
+    copy: `<span class="toolbar-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="9" y="9" width="10" height="10" rx="2"></rect>
           <path d="M15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path>
         </svg>
-      </span>
-      <span class="toolbar-label">Copy</span>
-    `,
-    explain: `
-      <span class="toolbar-icon">
+      </span>`,
+    explain: `<span class="toolbar-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="9"></circle>
           <path d="M9.5 9a2.5 2.5 0 1 1 4.2 1.8c-.8.7-1.2 1.1-1.2 2.2"></path>
           <path d="M12 17h.01"></path>
         </svg>
-      </span>
-      <span class="toolbar-label">Explain</span>
-    `,
-    translate: `
-      <span class="toolbar-icon">
+      </span>`,
+    translate: `<span class="toolbar-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 6h10"></path>
           <path d="M9 6c0 6-2 10-5 12"></path>
@@ -41,49 +36,72 @@
           <path d="M14 19l3-8 3 8"></path>
           <path d="M15 16h4"></path>
         </svg>
-      </span>
-      <span class="toolbar-label">Translate</span>
-    `,
-    summarize: `
-      <span class="toolbar-icon">
+      </span>`,
+    summarize: `<span class="toolbar-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 7h12"></path>
           <path d="M6 12h12"></path>
           <path d="M6 17h7"></path>
         </svg>
-      </span>
-      <span class="toolbar-label">Summarize</span>
-    `,
-    ask: `
-      <span class="toolbar-icon">
+      </span>`,
+    ask: `<span class="toolbar-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
           <path d="M8 9h8"></path>
           <path d="M8 13h5"></path>
         </svg>
-      </span>
-      <span class="toolbar-label">Ask</span>
-    `,
+      </span>`,
   };
 
   function createToolbar() {
     const toolbar = document.createElement("div");
     toolbar.className = "selection-toolbar hidden";
     toolbar.innerHTML = `
-      <div class="selection-toolbar-main">
-        <button type="button" class="open-sidebar-btn" title="Open ChatGPT Sidebar" aria-label="Open ChatGPT Sidebar">${TOOLBAR_ICONS.openSidebar}</button>
-        <button type="button" class="copy-btn" title="Copy" aria-label="Copy selection">${TOOLBAR_ICONS.copy}</button>
-        <button type="button" class="explain-btn" title="Explain" aria-label="Explain selection">${TOOLBAR_ICONS.explain}</button>
-        <button type="button" class="translate-btn" title="Translate" aria-label="Translate selection">${TOOLBAR_ICONS.translate}</button>
-        <button type="button" class="summarize-btn" title="Summarize" aria-label="Summarize selection">${TOOLBAR_ICONS.summarize}</button>
-        <button type="button" class="ask-btn" title="Ask about selection" aria-label="Ask about selection">${TOOLBAR_ICONS.ask}</button>
-      </div>
+      <div class="selection-toolbar-main"></div>
       <form class="ask-panel hidden" autocomplete="off">
         <input type="text" class="ask-input" placeholder="Ask about this selection..." aria-label="Ask about this selection" />
       </form>
     `;
     document.body.appendChild(toolbar);
+    renderToolbarButtons(toolbar);
     return toolbar;
+  }
+
+  function renderToolbarButtons(toolbar = currentToolbar) {
+    if (!toolbar) {
+      return;
+    }
+
+    const main = toolbar.querySelector(".selection-toolbar-main");
+    if (!main) {
+      return;
+    }
+
+    main.innerHTML = "";
+    toolbar.classList.toggle(
+      "icon-only",
+      toolbarSettings.labelMode === TOOLBAR_LABEL_MODE_ICON_ONLY
+    );
+
+    toolbarSettings.buttonOrder.forEach((key) => {
+      const action = getToolbarActionByKey(key);
+      if (!action || !toolbarSettings.visible[key]) {
+        return;
+      }
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = action.className;
+      button.title = action.title;
+      button.setAttribute("aria-label", action.title);
+      button.dataset.action = action.action;
+      button.innerHTML = `${TOOLBAR_ICONS[key]}<span class="toolbar-label">${action.label}</span>`;
+      button.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+      });
+      button.addEventListener("click", () => handleAction(action.action));
+      main.appendChild(button);
+    });
   }
 
   function getSelectionInfo() {
@@ -122,6 +140,11 @@
   }
 
   function showToolbarForSelection(selectionInfo) {
+    if (!canShowSelectionToolbar()) {
+      hideToolbar();
+      return;
+    }
+
     if (!currentToolbar) {
       currentToolbar = createToolbar();
       setupToolbarListeners();
@@ -157,6 +180,10 @@
     } catch (error) {
       console.error("[ChatGPT Sidebar] message send failed:", error);
     }
+  }
+
+  function canShowSelectionToolbar() {
+    return selectionToolbarEnabled && !currentSiteBlocked;
   }
 
   function hideAskPanel(options = {}) {
@@ -271,32 +298,6 @@
     if (!currentToolbar) {
       return;
     }
-
-    currentToolbar.querySelectorAll("button").forEach((button) => {
-      button.addEventListener("mousedown", (event) => {
-        // Preserve the current page selection while the toolbar button is pressed.
-        event.preventDefault();
-      });
-    });
-
-    currentToolbar
-      .querySelector(".open-sidebar-btn")
-      .addEventListener("click", () => handleAction("open-sidebar"));
-    currentToolbar
-      .querySelector(".copy-btn")
-      .addEventListener("click", () => handleAction("copy"));
-    currentToolbar
-      .querySelector(".explain-btn")
-      .addEventListener("click", () => handleAction("explain"));
-    currentToolbar
-      .querySelector(".translate-btn")
-      .addEventListener("click", () => handleAction("translate"));
-    currentToolbar
-      .querySelector(".summarize-btn")
-      .addEventListener("click", () => handleAction("summarize"));
-    currentToolbar
-      .querySelector(".ask-btn")
-      .addEventListener("click", () => handleAction("ask"));
     currentToolbar
       .querySelector(".ask-panel")
       .addEventListener("submit", (event) => {
@@ -316,23 +317,47 @@
       });
   }
 
-  function isSiteBlocked(callback) {
-    chrome.storage.local.get("blockedSites", (data) => {
-      const blocked = data.blockedSites || [];
-      const currentHost = window.location.hostname;
-      const blockedMatch = blocked.some(
-        (site) => currentHost.includes(site) || site.includes(currentHost)
-      );
-      callback(blockedMatch);
-    });
+  function updateToolbarAvailability(callback) {
+    chrome.storage.local.get(
+      [
+        "blockedSites",
+        SELECTION_TOOLBAR_ENABLED_STORAGE_KEY,
+        TOOLBAR_SETTINGS_STORAGE_KEY,
+      ],
+      (data) => {
+        const blocked = data.blockedSites || [];
+        const currentHost = window.location.hostname;
+        selectionToolbarEnabled =
+          data[SELECTION_TOOLBAR_ENABLED_STORAGE_KEY] !== false;
+        toolbarSettings = normalizeToolbarSettings(
+          data[TOOLBAR_SETTINGS_STORAGE_KEY]
+        );
+        currentSiteBlocked = blocked.some(
+          (site) => currentHost.includes(site) || site.includes(currentHost)
+        );
+        renderToolbarButtons();
+        if (
+          currentToolbar &&
+          !currentToolbar.classList.contains("hidden") &&
+          lastSelectionRect
+        ) {
+          positionToolbar(currentToolbar, lastSelectionRect);
+        }
+        if (!canShowSelectionToolbar()) {
+          hideToolbar();
+        }
+        callback && callback();
+      }
+    );
   }
 
-  isSiteBlocked((blocked) => {
-    if (blocked) {
-      return;
-    }
-
+  updateToolbarAvailability(() => {
     document.addEventListener("mouseup", (event) => {
+      if (!canShowSelectionToolbar()) {
+        hideToolbar();
+        return;
+      }
+
       if (currentToolbar && currentToolbar.contains(event.target)) {
         return;
       }
@@ -346,6 +371,11 @@
     });
 
     document.addEventListener("mousedown", (event) => {
+      if (!canShowSelectionToolbar()) {
+        hideToolbar();
+        return;
+      }
+
       if (currentToolbar && !currentToolbar.contains(event.target)) {
         hideToolbar();
       }
@@ -364,6 +394,20 @@
             height: rect.height,
           });
         }
+      }
+    });
+
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== "local") {
+        return;
+      }
+
+      if (
+        changes.blockedSites ||
+        changes[SELECTION_TOOLBAR_ENABLED_STORAGE_KEY] ||
+        changes[TOOLBAR_SETTINGS_STORAGE_KEY]
+      ) {
+        updateToolbarAvailability();
       }
     });
   });

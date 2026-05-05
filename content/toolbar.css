@@ -75,6 +75,16 @@
   letter-spacing: 0.01em;
 }
 
+.selection-toolbar.icon-only button {
+  width: 36px;
+  padding: 0;
+  gap: 0;
+}
+
+.selection-toolbar.icon-only button .toolbar-label {
+  display: none;
+}
+
 .selection-toolbar button .toolbar-logo {
   width: 18px;
   height: 18px;
@@ -84,30 +94,30 @@
 }
 
 .selection-toolbar button.open-sidebar-btn {
-  background: #111827;
-  color: white;
+  background: #10a37f;
+  color: #FFFFFF;
 }
 
 .selection-toolbar button.open-sidebar-btn:hover {
-  background: #030712;
+  background: #0d8a6a;
 }
 
 .selection-toolbar button.copy-btn {
-  background: #f0f0f0;
-  color: #333;
+  background: #4b5563;
+  color: #ffffff;
 }
 
 .selection-toolbar button.copy-btn:hover {
-  background: #e0e0e0;
+  background: #374151;
 }
 
 .selection-toolbar button.explain-btn {
-  background: #10a37f;
+  background: #1e3a8a;
   color: white;
 }
 
 .selection-toolbar button.explain-btn:hover {
-  background: #0d8a6a;
+  background: #172554;
 }
 
 .selection-toolbar button.translate-btn {

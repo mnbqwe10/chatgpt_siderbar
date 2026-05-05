@@ -23,6 +23,7 @@
     "service_worker": "background.js"
   },
   "action": {
+    "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "assets/logo.png",
       "32": "assets/logo.png",
@@ -39,6 +40,7 @@
         "lib/action-settings.js",
         "lib/prompt-engine.js",
         "lib/ask-prompt.js",
+        "lib/toolbar-settings.js",
         "content/content.js"
       ],
       "css": ["content/toolbar.css"],
@@ -56,7 +58,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["assets/logo.png"],
+      "resources": ["assets/logo.png", "assets/hide-sidebar-horiz.svg"],
       "matches": ["<all_urls>"]
     }
   ],

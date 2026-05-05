@@ -26,6 +26,13 @@ Open the extension's **Options** page to:
 - choose the Translate target language
 - block sites where the toolbar should not appear
 
+Use the extension popup from the Chrome toolbar to:
+
+- enable or disable the selection toolbar
+- choose the Translate target language
+- customize which toolbar buttons appear, their order, and whether labels are shown
+- open the ChatGPT sidebar
+
 Prompt templates support:
 
 - `{{selected_text}}`
