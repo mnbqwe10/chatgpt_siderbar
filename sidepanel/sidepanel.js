@@ -6,7 +6,9 @@ const BRIDGE_MESSAGE_SOURCE = "chatgpt-sidebar-bridge";
 let isIframeReady = false;
 let isBridgeReady = false;
 let nextRequestId = 0;
+let promptRelayInFlight = false;
 const pendingBridgeRequests = new Map();
+const pendingPromptQueue = [];
 
 function setStatus(msg, type = "") {
   statusBar.textContent = msg;
@@ -59,6 +61,7 @@ window.addEventListener("message", (event) => {
   if (message.type === "bridge-ready") {
     isBridgeReady = true;
     setStatus("ChatGPT bridge ready", "success");
+    flushPendingPrompts();
     return;
   }
 
@@ -76,8 +79,9 @@ window.addEventListener("message", (event) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "prompt-from-selection") {
-    relayPromptToChatGpt("inject-chatgpt-prompt", message.prompt, "Prompt sent");
+  if (message.type === "queued-selection-prompts") {
+    (message.prompts || []).forEach((prompt) => enqueuePrompt(prompt));
+    sendResponse({ ok: true });
   }
 });
 
@@ -137,10 +141,11 @@ function sendBridgeRequest(promptText) {
 
 function relayPromptToChatGpt(messageType, promptText, successMessage) {
   if (!isIframeReady) {
-    setStatus("ChatGPT not ready yet", "error");
+    enqueuePrompt(promptText, successMessage);
     return;
   }
 
+  promptRelayInFlight = true;
   setStatus("Sending prompt...");
 
   sendBridgeRequest(promptText)
@@ -157,9 +162,48 @@ function relayPromptToChatGpt(messageType, promptText, successMessage) {
     })
     .catch((error) => {
       setStatus("Prompt injection failed: " + error.message, "error");
+    })
+    .finally(() => {
+      promptRelayInFlight = false;
+      flushPendingPrompts();
     });
+}
+
+function enqueuePrompt(promptText, successMessage = "Prompt sent") {
+  if (!promptText) {
+    return;
+  }
+
+  pendingPromptQueue.push({ promptText, successMessage });
+
+  if (!isIframeReady || !isBridgeReady) {
+    setStatus("Prompt queued, waiting for ChatGPT...", "success");
+    return;
+  }
+
+  flushPendingPrompts();
+}
+
+function flushPendingPrompts() {
+  if (
+    promptRelayInFlight ||
+    !isIframeReady ||
+    !isBridgeReady ||
+    pendingPromptQueue.length === 0
+  ) {
+    return;
+  }
+
+  const nextPrompt = pendingPromptQueue.shift();
+  relayPromptToChatGpt(
+    "inject-chatgpt-prompt",
+    nextPrompt.promptText,
+    nextPrompt.successMessage
+  );
 }
 
 if (iframe && iframe.dataset.src) {
   iframe.src = iframe.dataset.src;
 }
+
+chrome.runtime.sendMessage({ type: "sidepanel-ready" });

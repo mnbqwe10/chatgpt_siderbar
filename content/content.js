@@ -213,7 +213,7 @@
     }
 
     sendRuntimeMessage({
-      type: "prompt-from-selection",
+      type: "selection-prompt-request",
       prompt: buildAskPrompt(question, lastSelection, {
         pageTitle: document.title,
         pageUrl: window.location.href,
@@ -261,7 +261,7 @@
         targetLanguage: settings.translate.targetLanguage,
       });
 
-      sendRuntimeMessage({ type: "prompt-from-selection", prompt });
+      sendRuntimeMessage({ type: "selection-prompt-request", prompt });
     });
 
     hideToolbar();
