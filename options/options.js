@@ -8,48 +8,48 @@ const blockedSitesList = document.getElementById("blocked-sites-list");
 const addSiteForm = document.getElementById("add-site-form");
 const siteInput = document.getElementById("site-input");
 const TRANSLATE_LANGUAGES = [
-  "Arabic",
-  "Bengali",
-  "Bulgarian",
-  "Chinese (Simplified)",
-  "Chinese (Traditional)",
-  "Croatian",
-  "Czech",
-  "Danish",
-  "Dutch",
-  "English",
-  "Estonian",
-  "Finnish",
-  "French",
-  "German",
-  "Greek",
-  "Hebrew",
-  "Hindi",
-  "Hungarian",
-  "Indonesian",
-  "Italian",
-  "Japanese",
-  "Korean",
-  "Latvian",
-  "Lithuanian",
-  "Malay",
-  "Norwegian",
-  "Persian",
-  "Polish",
-  "Portuguese",
-  "Romanian",
-  "Russian",
-  "Serbian",
-  "Slovak",
-  "Slovenian",
-  "Spanish",
-  "Swedish",
-  "Tamil",
-  "Thai",
-  "Turkish",
-  "Ukrainian",
-  "Urdu",
-  "Vietnamese",
+  { value: "Arabic", label: "العربية" },
+  { value: "Bengali", label: "বাংলা" },
+  { value: "Bulgarian", label: "Български" },
+  { value: "Chinese (Simplified)", label: "简体中文" },
+  { value: "Chinese (Traditional)", label: "繁體中文" },
+  { value: "Croatian", label: "Hrvatski" },
+  { value: "Czech", label: "Čeština" },
+  { value: "Danish", label: "Dansk" },
+  { value: "Dutch", label: "Nederlands" },
+  { value: "English", label: "English" },
+  { value: "Estonian", label: "Eesti" },
+  { value: "Finnish", label: "Suomi" },
+  { value: "French", label: "Français" },
+  { value: "German", label: "Deutsch" },
+  { value: "Greek", label: "Ελληνικά" },
+  { value: "Hebrew", label: "עברית" },
+  { value: "Hindi", label: "हिन्दी" },
+  { value: "Hungarian", label: "Magyar" },
+  { value: "Indonesian", label: "Bahasa Indonesia" },
+  { value: "Italian", label: "Italiano" },
+  { value: "Japanese", label: "日本語" },
+  { value: "Korean", label: "한국어" },
+  { value: "Latvian", label: "Latviešu" },
+  { value: "Lithuanian", label: "Lietuvių" },
+  { value: "Malay", label: "Bahasa Melayu" },
+  { value: "Norwegian", label: "Norsk" },
+  { value: "Persian", label: "فارسی" },
+  { value: "Polish", label: "Polski" },
+  { value: "Portuguese", label: "Português" },
+  { value: "Romanian", label: "Română" },
+  { value: "Russian", label: "Русский" },
+  { value: "Serbian", label: "Српски" },
+  { value: "Slovak", label: "Slovenčina" },
+  { value: "Slovenian", label: "Slovenščina" },
+  { value: "Spanish", label: "Español" },
+  { value: "Swedish", label: "Svenska" },
+  { value: "Tamil", label: "தமிழ்" },
+  { value: "Thai", label: "ไทย" },
+  { value: "Turkish", label: "Türkçe" },
+  { value: "Ukrainian", label: "Українська" },
+  { value: "Urdu", label: "اردو" },
+  { value: "Vietnamese", label: "Tiếng Việt" },
 ];
 
 function createActionButton(text, className, handler) {
@@ -63,17 +63,20 @@ function createActionButton(text, className, handler) {
 
 function populateTranslateLanguageOptions(selectedLanguage) {
   const languages = [...TRANSLATE_LANGUAGES];
-  if (selectedLanguage && !languages.includes(selectedLanguage)) {
-    languages.push(selectedLanguage);
+  if (
+    selectedLanguage &&
+    !languages.some((language) => language.value === selectedLanguage)
+  ) {
+    languages.push({ value: selectedLanguage, label: selectedLanguage });
   }
 
-  languages.sort((a, b) => a.localeCompare(b));
   translateLanguageInput.innerHTML = "";
 
   languages.forEach((language) => {
     const option = document.createElement("option");
-    option.value = language;
-    option.textContent = language;
+    option.value = language.value;
+    option.textContent = language.label;
+    option.title = language.value;
     translateLanguageInput.appendChild(option);
   });
 
