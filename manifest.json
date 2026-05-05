@@ -12,12 +12,8 @@
   "permissions": [
     "storage",
     "sidePanel",
-    "tabs",
-    "activeTab",
-    "scripting",
     "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
-    "webNavigation"
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "https://chat.openai.com/*",

@@ -1,6 +1,5 @@
 const iframe = document.getElementById("chatgpt-iframe");
 const statusBar = document.getElementById("status-bar");
-const screenshotBtn = document.getElementById("screenshot-btn");
 
 const BRIDGE_MESSAGE_SOURCE = "chatgpt-sidebar-bridge";
 
@@ -79,8 +78,6 @@ window.addEventListener("message", (event) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "prompt-from-selection") {
     relayPromptToChatGpt("inject-chatgpt-prompt", message.prompt, "Prompt sent");
-  } else if (message.type === "screenshot") {
-    captureAndSend(message.dataUrl);
   }
 });
 
@@ -162,39 +159,6 @@ function relayPromptToChatGpt(messageType, promptText, successMessage) {
       setStatus("Prompt injection failed: " + error.message, "error");
     });
 }
-
-async function captureAndSend(dataUrl) {
-  if (!isIframeReady) {
-    setStatus("ChatGPT not ready", "error");
-    return;
-  }
-  if (!dataUrl) {
-    setStatus("No screenshot data", "error");
-    return;
-  }
-
-  relayPromptToChatGpt(
-    "inject-chatgpt-screenshot",
-    `What do you see in this screenshot? ![screenshot](${dataUrl})`,
-    "Screenshot sent"
-  );
-}
-
-screenshotBtn.addEventListener("click", async () => {
-  setStatus("Capturing...");
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    chrome.tabs.captureTab(tab.id, { format: "png" }, (dataUrl) => {
-      if (chrome.runtime.lastError) {
-        setStatus("Capture failed: " + chrome.runtime.lastError.message, "error");
-        return;
-      }
-      captureAndSend(dataUrl);
-    });
-  } catch (e) {
-    setStatus("Screenshot failed: " + e.message, "error");
-  }
-});
 
 if (iframe && iframe.dataset.src) {
   iframe.src = iframe.dataset.src;
