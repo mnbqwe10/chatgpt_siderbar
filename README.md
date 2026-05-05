@@ -24,7 +24,6 @@ Open the extension's **Options** page to:
 
 - change the built-in Explain, Translate, and Summarize prompts
 - choose the Translate target language
-- add custom prompts
 - block sites where the toolbar should not appear
 
 Prompt templates support:
