@@ -16,7 +16,7 @@ A Chrome extension that opens ChatGPT in a side panel and lets you send selected
 
 1. Open the extension and sign in to ChatGPT in the sidebar
 2. Select text on any page to open the quick toolbar
-3. Use **Open**, **Copy**, **Explain**, **Translate**, or **Summarize**
+3. Use **Open**, **Copy**, **Explain**, **Translate**, **Summarize**, or **Ask**
 4. Click **Capture** in the sidebar to send a screenshot to ChatGPT
 
 ## Options

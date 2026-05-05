@@ -42,6 +42,7 @@
       "js": [
         "lib/action-settings.js",
         "lib/prompt-engine.js",
+        "lib/ask-prompt.js",
         "content/content.js"
       ],
       "css": ["content/toolbar.css"],

@@ -1,6 +1,7 @@
 (function () {
   let currentToolbar = null;
   let lastSelection = null;
+  let lastSelectionRect = null;
   const openSidebarLogoUrl = chrome.runtime.getURL("assets/logo.png");
 
   const TOOLBAR_ICONS = {
@@ -53,17 +54,33 @@
       </span>
       <span class="toolbar-label">Summarize</span>
     `,
+    ask: `
+      <span class="toolbar-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+          <path d="M8 9h8"></path>
+          <path d="M8 13h5"></path>
+        </svg>
+      </span>
+      <span class="toolbar-label">Ask</span>
+    `,
   };
 
   function createToolbar() {
     const toolbar = document.createElement("div");
     toolbar.className = "selection-toolbar hidden";
     toolbar.innerHTML = `
-      <button type="button" class="open-sidebar-btn" title="Open ChatGPT Sidebar" aria-label="Open ChatGPT Sidebar">${TOOLBAR_ICONS.openSidebar}</button>
-      <button type="button" class="copy-btn" title="Copy" aria-label="Copy selection">${TOOLBAR_ICONS.copy}</button>
-      <button type="button" class="explain-btn" title="Explain" aria-label="Explain selection">${TOOLBAR_ICONS.explain}</button>
-      <button type="button" class="translate-btn" title="Translate" aria-label="Translate selection">${TOOLBAR_ICONS.translate}</button>
-      <button type="button" class="summarize-btn" title="Summarize" aria-label="Summarize selection">${TOOLBAR_ICONS.summarize}</button>
+      <div class="selection-toolbar-main">
+        <button type="button" class="open-sidebar-btn" title="Open ChatGPT Sidebar" aria-label="Open ChatGPT Sidebar">${TOOLBAR_ICONS.openSidebar}</button>
+        <button type="button" class="copy-btn" title="Copy" aria-label="Copy selection">${TOOLBAR_ICONS.copy}</button>
+        <button type="button" class="explain-btn" title="Explain" aria-label="Explain selection">${TOOLBAR_ICONS.explain}</button>
+        <button type="button" class="translate-btn" title="Translate" aria-label="Translate selection">${TOOLBAR_ICONS.translate}</button>
+        <button type="button" class="summarize-btn" title="Summarize" aria-label="Summarize selection">${TOOLBAR_ICONS.summarize}</button>
+        <button type="button" class="ask-btn" title="Ask about selection" aria-label="Ask about selection">${TOOLBAR_ICONS.ask}</button>
+      </div>
+      <form class="ask-panel hidden" autocomplete="off">
+        <input type="text" class="ask-input" placeholder="Ask about this selection..." aria-label="Ask about this selection" />
+      </form>
     `;
     document.body.appendChild(toolbar);
     return toolbar;
@@ -98,6 +115,7 @@
     if (left + toolbarRect.width > window.innerWidth) {
       left = window.innerWidth - toolbarRect.width - 8;
     }
+    left = Math.max(8, left);
 
     toolbar.style.top = `${top}px`;
     toolbar.style.left = `${left}px`;
@@ -111,8 +129,10 @@
 
     currentToolbar.style.display = "flex";
     currentToolbar.classList.remove("hidden");
+    hideAskPanel({ clear: true });
     positionToolbar(currentToolbar, selectionInfo.rect);
     lastSelection = selectionInfo.text;
+    lastSelectionRect = selectionInfo.rect;
   }
 
   function hideToolbar() {
@@ -122,6 +142,7 @@
 
     currentToolbar.style.display = "none";
     currentToolbar.classList.add("hidden");
+    hideAskPanel({ clear: true });
   }
 
   function getBuiltInActionSettings(callback) {
@@ -136,6 +157,69 @@
     } catch (error) {
       console.error("[ChatGPT Sidebar] message send failed:", error);
     }
+  }
+
+  function hideAskPanel(options = {}) {
+    if (!currentToolbar) {
+      return;
+    }
+
+    const askPanel = currentToolbar.querySelector(".ask-panel");
+    const askInput = currentToolbar.querySelector(".ask-input");
+    if (!askPanel) {
+      return;
+    }
+
+    askPanel.classList.add("hidden");
+    currentToolbar.classList.remove("ask-mode");
+
+    if (options.clear && askInput) {
+      askInput.value = "";
+    }
+  }
+
+  function showAskPanel() {
+    if (!currentToolbar || !lastSelection) {
+      return;
+    }
+
+    const askPanel = currentToolbar.querySelector(".ask-panel");
+    const askInput = currentToolbar.querySelector(".ask-input");
+    if (!askPanel || !askInput) {
+      return;
+    }
+
+    askPanel.classList.remove("hidden");
+    currentToolbar.classList.add("ask-mode");
+
+    if (lastSelectionRect) {
+      positionToolbar(currentToolbar, lastSelectionRect);
+    }
+
+    window.setTimeout(() => {
+      askInput.focus();
+    }, 0);
+  }
+
+  function submitAskPrompt() {
+    if (!currentToolbar || !lastSelection) {
+      return;
+    }
+
+    const askInput = currentToolbar.querySelector(".ask-input");
+    const question = askInput ? askInput.value.trim() : "";
+    if (!question) {
+      return;
+    }
+
+    sendRuntimeMessage({
+      type: "prompt-from-selection",
+      prompt: buildAskPrompt(question, lastSelection, {
+        pageTitle: document.title,
+        pageUrl: window.location.href,
+      }),
+    });
+    hideToolbar();
   }
 
   function handleAction(action) {
@@ -156,6 +240,11 @@
     if (action === "copy") {
       navigator.clipboard.writeText(selectedText);
       hideToolbar();
+      return;
+    }
+
+    if (action === "ask") {
+      showAskPanel();
       return;
     }
 
@@ -205,6 +294,26 @@
     currentToolbar
       .querySelector(".summarize-btn")
       .addEventListener("click", () => handleAction("summarize"));
+    currentToolbar
+      .querySelector(".ask-btn")
+      .addEventListener("click", () => handleAction("ask"));
+    currentToolbar
+      .querySelector(".ask-panel")
+      .addEventListener("submit", (event) => {
+        event.preventDefault();
+        submitAskPrompt();
+      });
+    currentToolbar
+      .querySelector(".ask-input")
+      .addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          hideAskPanel({ clear: true });
+          if (lastSelectionRect) {
+            positionToolbar(currentToolbar, lastSelectionRect);
+          }
+        }
+      });
   }
 
   function isSiteBlocked(callback) {
