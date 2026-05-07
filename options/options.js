@@ -1,3 +1,4 @@
+const platformSelect = document.getElementById("platform-select");
 const builtInActionsForm = document.getElementById("built-in-actions-form");
 const explainTemplateInput = document.getElementById("explain-template");
 const translateLanguageInput = document.getElementById("translate-language");
@@ -7,6 +8,21 @@ const resetBuiltInsBtn = document.getElementById("reset-built-ins-btn");
 const blockedSitesList = document.getElementById("blocked-sites-list");
 const addSiteForm = document.getElementById("add-site-form");
 const siteInput = document.getElementById("site-input");
+
+function populatePlatformOptions(selectedPlatformId) {
+  platformSelect.innerHTML = "";
+  getAllPlatforms().forEach((platform) => {
+    const option = document.createElement("option");
+    option.value = platform.id;
+    option.textContent = platform.label;
+    platformSelect.appendChild(option);
+  });
+  platformSelect.value = selectedPlatformId || DEFAULT_PLATFORM;
+}
+
+platformSelect.addEventListener("change", () => {
+  setSelectedPlatform(platformSelect.value);
+});
 
 function createActionButton(text, className, handler) {
   const button = document.createElement("button");
@@ -69,8 +85,9 @@ function renderBlockedSites(sites) {
 
 function loadSettings() {
   chrome.storage.local.get(
-    ["blockedSites", ACTION_SETTINGS_STORAGE_KEY],
+    ["blockedSites", ACTION_SETTINGS_STORAGE_KEY, PLATFORM_STORAGE_KEY],
     (data) => {
+      populatePlatformOptions(data[PLATFORM_STORAGE_KEY]);
       renderBuiltInActions(
         normalizeActionSettings(data[ACTION_SETTINGS_STORAGE_KEY])
       );

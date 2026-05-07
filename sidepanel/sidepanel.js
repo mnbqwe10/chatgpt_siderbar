@@ -1,8 +1,9 @@
-const iframe = document.getElementById("chatgpt-iframe");
+const iframe = document.getElementById("chatbot-iframe");
 const statusBar = document.getElementById("status-bar");
+const platformName = document.getElementById("platform-name");
 
-const BRIDGE_MESSAGE_SOURCE = "chatgpt-sidebar-bridge";
-
+let currentPlatform = null;
+let bridgeMessageSource = "";
 let isIframeReady = false;
 let isBridgeReady = false;
 let nextRequestId = 0;
@@ -15,8 +16,23 @@ function setStatus(msg, type = "") {
   statusBar.className = type ? type : "";
 }
 
-function getChatGptOrigin() {
-  return new URL(iframe.dataset.src || iframe.src).origin;
+function setPlatformLabel(platform) {
+  const label = platform && platform.label ? platform.label : "Chatbot";
+  if (platformName) {
+    platformName.textContent = label;
+  }
+  document.title = label + " Sidebar";
+}
+
+function getTargetOrigin() {
+  if (currentPlatform) {
+    return currentPlatform.origin;
+  }
+  try {
+    return new URL(iframe.src).origin;
+  } catch (e) {
+    return "*";
+  }
 }
 
 function pingBridge() {
@@ -27,10 +43,10 @@ function pingBridge() {
   try {
     iframe.contentWindow.postMessage(
       {
-        source: BRIDGE_MESSAGE_SOURCE,
+        source: bridgeMessageSource,
         type: "bridge-ping",
       },
-      getChatGptOrigin()
+      getTargetOrigin()
     );
   } catch (error) {
     // Ignore ping failures; waitForBridge will surface a real timeout if needed.
@@ -40,12 +56,14 @@ function pingBridge() {
 iframe.addEventListener("load", () => {
   isIframeReady = true;
   isBridgeReady = false;
-  setStatus("ChatGPT loaded, waiting for bridge...", "success");
+  const label = currentPlatform ? currentPlatform.label : "Chatbot";
+  setStatus(label + " loaded, waiting for bridge...", "success");
   pingBridge();
 });
 
 iframe.addEventListener("error", () => {
-  setStatus("Failed to load ChatGPT", "error");
+  const label = currentPlatform ? currentPlatform.label : "Chatbot";
+  setStatus("Failed to load " + label, "error");
 });
 
 window.addEventListener("message", (event) => {
@@ -54,13 +72,14 @@ window.addEventListener("message", (event) => {
   }
 
   const message = event.data;
-  if (!message || message.source !== BRIDGE_MESSAGE_SOURCE) {
+  if (!message || message.source !== bridgeMessageSource) {
     return;
   }
 
   if (message.type === "bridge-ready") {
     isBridgeReady = true;
-    setStatus("ChatGPT bridge ready", "success");
+    const label = currentPlatform ? currentPlatform.label : "Chatbot";
+    setStatus(label + " bridge ready", "success");
     flushPendingPrompts();
     return;
   }
@@ -101,7 +120,8 @@ function waitForBridge(timeoutMs = 5000) {
       }
 
       if (Date.now() - start >= timeoutMs) {
-        reject(new Error("ChatGPT bridge not ready yet"));
+        const label = currentPlatform ? currentPlatform.label : "Chatbot";
+        reject(new Error(label + " bridge not ready yet"));
         return;
       }
 
@@ -116,7 +136,7 @@ function waitForBridge(timeoutMs = 5000) {
 function sendBridgeRequest(promptText) {
   return waitForBridge().then((targetWindow) => {
     const requestId = `req-${Date.now()}-${nextRequestId++}`;
-    const targetOrigin = getChatGptOrigin();
+    const targetOrigin = getTargetOrigin();
 
     return new Promise((resolve, reject) => {
       pendingBridgeRequests.set(requestId, { resolve, reject });
@@ -124,7 +144,7 @@ function sendBridgeRequest(promptText) {
       try {
         targetWindow.postMessage(
           {
-            source: BRIDGE_MESSAGE_SOURCE,
+            source: bridgeMessageSource,
             type: "inject-prompt",
             requestId,
             promptText,
@@ -139,7 +159,7 @@ function sendBridgeRequest(promptText) {
   });
 }
 
-function relayPromptToChatGpt(messageType, promptText, successMessage) {
+function relayPrompt(promptText, successMessage) {
   if (!isIframeReady) {
     enqueuePrompt(promptText, successMessage);
     return;
@@ -151,8 +171,9 @@ function relayPromptToChatGpt(messageType, promptText, successMessage) {
   sendBridgeRequest(promptText)
     .then((response) => {
       if (!response || !response.ok) {
+        const label = currentPlatform ? currentPlatform.label : "Chatbot";
         setStatus(
-          (response && response.error) || "ChatGPT composer not available",
+          (response && response.error) || label + " composer not available",
           "error"
         );
         return;
@@ -177,7 +198,8 @@ function enqueuePrompt(promptText, successMessage = "Prompt sent") {
   pendingPromptQueue.push({ promptText, successMessage });
 
   if (!isIframeReady || !isBridgeReady) {
-    setStatus("Prompt queued, waiting for ChatGPT...", "success");
+    const label = currentPlatform ? currentPlatform.label : "Chatbot";
+    setStatus("Prompt queued, waiting for " + label + "...", "success");
     return;
   }
 
@@ -195,15 +217,31 @@ function flushPendingPrompts() {
   }
 
   const nextPrompt = pendingPromptQueue.shift();
-  relayPromptToChatGpt(
-    "inject-chatgpt-prompt",
-    nextPrompt.promptText,
-    nextPrompt.successMessage
-  );
+  relayPrompt(nextPrompt.promptText, nextPrompt.successMessage);
 }
 
-if (iframe && iframe.dataset.src) {
-  iframe.src = iframe.dataset.src;
+function initPlatform(platform) {
+  currentPlatform = platform;
+  bridgeMessageSource = platform.bridgeSource;
+  isIframeReady = false;
+  isBridgeReady = false;
+  setPlatformLabel(platform);
+  setStatus("Loading " + platform.label + "...");
+  iframe.src = platform.url;
 }
 
-chrome.runtime.sendMessage({ type: "sidepanel-ready" });
+getSelectedPlatform().then((platform) => {
+  initPlatform(platform);
+  chrome.runtime.sendMessage({ type: "sidepanel-ready" });
+});
+
+// Listen for platform changes while sidepanel is open
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes[PLATFORM_STORAGE_KEY]) {
+    const newPlatformId = changes[PLATFORM_STORAGE_KEY].newValue || DEFAULT_PLATFORM;
+    const newPlatform = getPlatformConfig(newPlatformId);
+    if (!currentPlatform || currentPlatform.id !== newPlatform.id) {
+      initPlatform(newPlatform);
+    }
+  }
+});

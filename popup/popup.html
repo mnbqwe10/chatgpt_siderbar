@@ -13,10 +13,15 @@
       </label>
       <div class="brand">
         <img src="../assets/logo.png" alt="" class="popup-logo">
-        <h1>Sidebar</h1>
+        <h1 id="brand-title">Sidebar</h1>
       </div>
       <button type="button" id="open-sidebar-btn" class="primary-btn">Open Sidebar</button>
     </header>
+
+    <section class="panel">
+      <label for="platform-select">AI Platform</label>
+      <select id="platform-select"></select>
+    </section>
 
     <section class="panel">
       <label for="target-language">Translate To</label>
@@ -38,6 +43,7 @@
 
   <script src="../lib/translate-languages.js"></script>
   <script src="../lib/action-settings.js"></script>
+  <script src="../lib/platforms.js"></script>
   <script src="../lib/toolbar-settings.js"></script>
   <script src="popup.js"></script>
 </body>

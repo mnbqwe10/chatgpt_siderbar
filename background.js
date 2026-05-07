@@ -1,23 +1,100 @@
+const PLATFORM_RULES = [
+  {
+    id: 1,
+    priority: 1,
+    action: {
+      type: "modifyHeaders",
+      responseHeaders: [
+        { header: "content-security-policy", operation: "remove" },
+        { header: "x-frame-options", operation: "remove" }
+      ]
+    },
+    condition: {
+      urlFilter: "https://chatgpt.com/*",
+      resourceTypes: ["main_frame", "sub_frame"]
+    }
+  },
+  {
+    id: 2,
+    priority: 1,
+    action: {
+      type: "modifyHeaders",
+      responseHeaders: [
+        { header: "content-security-policy", operation: "remove" },
+        { header: "x-frame-options", operation: "remove" }
+      ]
+    },
+    condition: {
+      urlFilter: "https://chat.openai.com/*",
+      resourceTypes: ["main_frame", "sub_frame"]
+    }
+  },
+  {
+    id: 3,
+    priority: 1,
+    action: {
+      type: "modifyHeaders",
+      responseHeaders: [
+        { header: "content-security-policy", operation: "remove" },
+        { header: "x-frame-options", operation: "remove" }
+      ]
+    },
+    condition: {
+      urlFilter: "https://m365.cloud.microsoft/*",
+      resourceTypes: ["main_frame", "sub_frame"]
+    }
+  },
+  {
+    id: 4,
+    priority: 1,
+    action: {
+      type: "modifyHeaders",
+      responseHeaders: [
+        { header: "content-security-policy", operation: "remove" },
+        { header: "x-frame-options", operation: "remove" }
+      ]
+    },
+    condition: {
+      urlFilter: "https://gemini.google.com/*",
+      resourceTypes: ["main_frame", "sub_frame"]
+    }
+  },
+  {
+    id: 5,
+    priority: 1,
+    action: {
+      type: "modifyHeaders",
+      responseHeaders: [
+        { header: "content-security-policy", operation: "remove" },
+        { header: "x-frame-options", operation: "remove" }
+      ]
+    },
+    condition: {
+      urlFilter: "https://chat.deepseek.com/*",
+      resourceTypes: ["main_frame", "sub_frame"]
+    }
+  },
+  {
+    id: 6,
+    priority: 1,
+    action: {
+      type: "modifyHeaders",
+      responseHeaders: [
+        { header: "content-security-policy", operation: "remove" },
+        { header: "x-frame-options", operation: "remove" }
+      ]
+    },
+    condition: {
+      urlFilter: "https://claude.ai/*",
+      resourceTypes: ["main_frame", "sub_frame"]
+    }
+  }
+];
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.declarativeNetRequest.updateDynamicRules({
-    addRules: [
-      {
-        id: 1,
-        priority: 1,
-        action: {
-          type: "modifyHeaders",
-          responseHeaders: [
-            { header: "content-security-policy", operation: "remove" },
-            { header: "x-frame-options", operation: "remove" }
-          ]
-        },
-        condition: {
-          urlFilter: "https://chatgpt.com/*",
-          resourceTypes: ["main_frame", "sub_frame"]
-        }
-      }
-    ],
-    removeRuleIds: [1]
+    addRules: PLATFORM_RULES,
+    removeRuleIds: PLATFORM_RULES.map((r) => r.id)
   });
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
 });

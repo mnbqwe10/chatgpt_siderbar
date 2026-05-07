@@ -6,11 +6,16 @@
 </head>
 <body>
   <div id="sidebar-root">
-    <div id="chatgpt-iframe-container">
-      <iframe id="chatgpt-iframe" src="about:blank" data-src="https://chatgpt.com/" loading="lazy" allow="clipboard-write; microphone"></iframe>
+    <div id="platform-header">
+      <img src="../assets/logo.png" alt="" class="platform-logo">
+      <span id="platform-name">ChatGPT (OpenAI)</span>
+    </div>
+    <div id="chatbot-iframe-container">
+      <iframe id="chatbot-iframe" src="about:blank" loading="lazy" allow="clipboard-write; microphone"></iframe>
     </div>
   </div>
   <div id="status-bar"></div>
+  <script src="../lib/platforms.js"></script>
   <script src="sidepanel.js"></script>
 </body>
 </html>

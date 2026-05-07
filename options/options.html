@@ -10,6 +10,15 @@
     <h1>ChatGPT Sidebar Options</h1>
 
     <section class="section">
+      <h2>AI Platform</h2>
+      <p class="hint">Choose which AI chatbot to embed in the sidebar.</p>
+      <div class="action-card">
+        <label for="platform-select">Platform</label>
+        <select id="platform-select" required></select>
+      </div>
+    </section>
+
+    <section class="section">
       <h2>Built-in Toolbar Actions</h2>
       <p class="hint">Customize the built-in prompts. You can use <code>{{selected_text}}</code>, <code>{{page_url}}</code>, <code>{{page_title}}</code>, and for Translate also <code>{{target_language}}</code>.</p>
       <form id="built-in-actions-form" class="stack-form">
@@ -58,6 +67,7 @@
   </div>
   <script src="../lib/translate-languages.js"></script>
   <script src="../lib/action-settings.js"></script>
+  <script src="../lib/platforms.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

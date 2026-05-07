@@ -1,4 +1,6 @@
 const extensionEnabledInput = document.getElementById("extension-enabled");
+const platformSelectInput = document.getElementById("platform-select");
+const brandTitle = document.getElementById("brand-title");
 const targetLanguageInput = document.getElementById("target-language");
 const labelModeInput = document.getElementById("label-mode");
 const toolbarActionsList = document.getElementById("toolbar-actions-list");
@@ -6,6 +8,23 @@ const openSidebarBtn = document.getElementById("open-sidebar-btn");
 
 let currentToolbarSettings = getDefaultToolbarSettings();
 let draggedActionKey = null;
+
+function populatePlatformOptions(selectedPlatformId) {
+  platformSelectInput.innerHTML = "";
+  getAllPlatforms().forEach((platform) => {
+    const option = document.createElement("option");
+    option.value = platform.id;
+    option.textContent = platform.label;
+    platformSelectInput.appendChild(option);
+  });
+  platformSelectInput.value = selectedPlatformId || DEFAULT_PLATFORM;
+  updateBrandTitle(selectedPlatformId);
+}
+
+function updateBrandTitle(platformId) {
+  const platform = getPlatformConfig(platformId || DEFAULT_PLATFORM);
+  brandTitle.textContent = platform.label;
+}
 
 function populateTranslateLanguageOptions(selectedLanguage) {
   const languages = [...TRANSLATE_LANGUAGES];
@@ -148,11 +167,14 @@ function loadPopupSettings() {
       SELECTION_TOOLBAR_ENABLED_STORAGE_KEY,
       ACTION_SETTINGS_STORAGE_KEY,
       TOOLBAR_SETTINGS_STORAGE_KEY,
+      PLATFORM_STORAGE_KEY,
     ],
     (data) => {
       renderEnabledState(
         data[SELECTION_TOOLBAR_ENABLED_STORAGE_KEY] !== false
       );
+
+      populatePlatformOptions(data[PLATFORM_STORAGE_KEY]);
 
       const actionSettings = normalizeActionSettings(
         data[ACTION_SETTINGS_STORAGE_KEY]
@@ -172,6 +194,11 @@ extensionEnabledInput.addEventListener("change", () => {
     [SELECTION_TOOLBAR_ENABLED_STORAGE_KEY]: extensionEnabledInput.checked,
   });
   renderEnabledState(extensionEnabledInput.checked);
+});
+
+platformSelectInput.addEventListener("change", () => {
+  setSelectedPlatform(platformSelectInput.value);
+  updateBrandTitle(platformSelectInput.value);
 });
 
 targetLanguageInput.addEventListener("change", () => {
@@ -219,6 +246,12 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
       changes[TOOLBAR_SETTINGS_STORAGE_KEY].newValue
     );
     renderToolbarActions();
+  }
+
+  if (changes[PLATFORM_STORAGE_KEY]) {
+    const newId = changes[PLATFORM_STORAGE_KEY].newValue || DEFAULT_PLATFORM;
+    platformSelectInput.value = newId;
+    updateBrandTitle(newId);
   }
 });
 

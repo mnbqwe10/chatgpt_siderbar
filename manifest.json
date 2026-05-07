@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Sidebar",
+  "name": "AI Sidebar",
   "version": "1.0.0",
-  "description": "Access ChatGPT from any webpage via sidebar, with text selection quick actions",
+  "description": "Access popular AI chatbots from any webpage via sidebar, with text selection quick actions",
   "icons": {
     "16": "assets/logo.png",
     "32": "assets/logo.png",
@@ -17,7 +17,11 @@
   ],
   "host_permissions": [
     "https://chat.openai.com/*",
-    "https://chatgpt.com/*"
+    "https://chatgpt.com/*",
+    "https://m365.cloud.microsoft/*",
+    "https://gemini.google.com/*",
+    "https://chat.deepseek.com/*",
+    "https://claude.ai/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -37,6 +41,7 @@
     {
       "matches": ["<all_urls>"],
       "js": [
+        "lib/platforms.js",
         "lib/action-settings.js",
         "lib/prompt-engine.js",
         "lib/ask-prompt.js",
@@ -52,6 +57,38 @@
         "https://chatgpt.com/*"
       ],
       "js": ["content/chatgpt-bridge.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://m365.cloud.microsoft/*"
+      ],
+      "js": ["content/copilot-bridge.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://gemini.google.com/*"
+      ],
+      "js": ["content/gemini-bridge.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://chat.deepseek.com/*"
+      ],
+      "js": ["content/deepseek-bridge.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://claude.ai/*"
+      ],
+      "js": ["content/claude-bridge.js"],
       "all_frames": true,
       "run_at": "document_idle"
     }
@@ -72,7 +109,7 @@
         "default": "Ctrl+Space",
         "mac": "Command+Space"
       },
-      "description": "Open ChatGPT sidebar"
+      "description": "Open AI sidebar"
     }
   }
 }
