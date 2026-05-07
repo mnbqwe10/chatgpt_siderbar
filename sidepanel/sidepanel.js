@@ -1,6 +1,6 @@
 const iframe = document.getElementById("chatbot-iframe");
 const statusBar = document.getElementById("status-bar");
-const platformName = document.getElementById("platform-name");
+const platformSelect = document.getElementById("platform-select");
 
 let currentPlatform = null;
 let bridgeMessageSource = "";
@@ -18,10 +18,23 @@ function setStatus(msg, type = "") {
 
 function setPlatformLabel(platform) {
   const label = platform && platform.label ? platform.label : "Chatbot";
-  if (platformName) {
-    platformName.textContent = label;
-  }
   document.title = label + " Sidebar";
+}
+
+function populatePlatformOptions(selectedPlatformId) {
+  if (!platformSelect) {
+    return;
+  }
+
+  platformSelect.innerHTML = "";
+  getAllPlatforms().forEach((platform) => {
+    const option = document.createElement("option");
+    option.value = platform.id;
+    option.textContent = platform.label;
+    platformSelect.appendChild(option);
+  });
+
+  platformSelect.value = selectedPlatformId || DEFAULT_PLATFORM;
 }
 
 function getTargetOrigin() {
@@ -225,12 +238,26 @@ function initPlatform(platform) {
   bridgeMessageSource = platform.bridgeSource;
   isIframeReady = false;
   isBridgeReady = false;
+  if (platformSelect) {
+    platformSelect.value = platform.id;
+  }
   setPlatformLabel(platform);
   setStatus("Loading " + platform.label + "...");
   iframe.src = platform.url;
 }
 
+if (platformSelect) {
+  platformSelect.addEventListener("change", () => {
+    const selectedPlatform = getPlatformConfig(platformSelect.value);
+    if (!currentPlatform || currentPlatform.id !== selectedPlatform.id) {
+      initPlatform(selectedPlatform);
+    }
+    setSelectedPlatform(selectedPlatform.id);
+  });
+}
+
 getSelectedPlatform().then((platform) => {
+  populatePlatformOptions(platform.id);
   initPlatform(platform);
   chrome.runtime.sendMessage({ type: "sidepanel-ready" });
 });
@@ -240,6 +267,9 @@ chrome.storage.onChanged.addListener((changes) => {
   if (changes[PLATFORM_STORAGE_KEY]) {
     const newPlatformId = changes[PLATFORM_STORAGE_KEY].newValue || DEFAULT_PLATFORM;
     const newPlatform = getPlatformConfig(newPlatformId);
+    if (platformSelect) {
+      platformSelect.value = newPlatform.id;
+    }
     if (!currentPlatform || currentPlatform.id !== newPlatform.id) {
       initPlatform(newPlatform);
     }
